@@ -18,15 +18,16 @@ struct ContentView: View {
         }, set: { value in
           if value { spacesVM.selectedSpace = nil }
         }))
+        // aniamtion fade in , fade out
         .transition(.asymmetric(
-          insertion: .opacity.animation(.easeIn(duration: 0.3)),  // fade in
-          removal: .opacity.animation(.easeOut(duration: 0.3))   // fade out
+          insertion: .opacity.animation(.easeIn(duration: 0.3)),
+          removal: .opacity.animation(.easeOut(duration: 0.3))
         ))
       } else {
         SpacesListView()
           .transition(.asymmetric(
-            insertion: .opacity.animation(.easeIn(duration: 0.3)),  // fade in
-            removal: .opacity.animation(.easeOut(duration: 0.3))   // fade out
+            insertion: .opacity.animation(.easeIn(duration: 0.3)),
+            removal: .opacity.animation(.easeOut(duration: 0.3))
           ))
       }
     }.frame(maxWidth: .infinity , maxHeight: .infinity)
@@ -34,10 +35,6 @@ struct ContentView: View {
     
   }
 }
-
-
-
-
 
 #Preview {
   ContentView().environmentObject(SpacesViewModel())
