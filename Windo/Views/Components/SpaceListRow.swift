@@ -16,8 +16,7 @@ struct SpaceListRow: View {
     HStack(alignment: .center) {
       if let space = space {
         Image(systemName: "folder.fill")
-          .foregroundColor(isHovered ? .black : .black.opacity(0.4)  )
-          .foregroundColor(.black.opacity(0.4))
+          .foregroundColor(isHovered ? .black : .black.opacity(0.4))
         Text(space.name)
           .foregroundColor(isHovered ? .black : .black.opacity(0.4)  )
           .font(.system(size: 14, weight: .medium))
@@ -36,7 +35,7 @@ struct SpaceListRow: View {
     .padding(.horizontal, 8)
     .background(
       isHovered
-      ? AnyShapeStyle(.ultraThinMaterial.opacity(0.3) )
+      ? AnyShapeStyle(.black.opacity(0.1) )
       : AnyShapeStyle(Color.clear)
     )
     .cornerRadius(8)

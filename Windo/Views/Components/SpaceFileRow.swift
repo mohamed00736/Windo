@@ -20,6 +20,8 @@ struct SpaceFileRow: View {
         case "mic": return "mic"
         case "chat": return "bubble.left"
         case "cal": return "calendar"
+        case "web": return "globe"
+        case "unknown": return "doc"
         default: return "doc"
         }
     }
@@ -32,6 +34,8 @@ struct SpaceFileRow: View {
         case "mic": return .red
         case "chat": return .cyan
         case "cal": return .blue
+        case "web": return .purple
+        case "unknown": return .gray
         default: return .gray
         }
     }
@@ -49,7 +53,7 @@ struct SpaceFileRow: View {
         .padding(.horizontal, 8)
         .background(
           isHovered
-          ? AnyShapeStyle(.ultraThinMaterial.opacity(0.3) )
+          ? AnyShapeStyle(.black.opacity(0.1) )
           : AnyShapeStyle(Color.clear)
         )
         .cornerRadius(8)

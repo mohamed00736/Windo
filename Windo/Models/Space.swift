@@ -12,4 +12,10 @@ struct Space: Identifiable, Equatable , Hashable {
     let id: UUID
     let name: String
     let files: [SpaceFile]
+    
+    init(name: String, files: [SpaceFile] = []) {
+        self.id = UUID()
+        self.name = name
+        self.files = files
+    }
 }

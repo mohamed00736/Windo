@@ -9,19 +9,64 @@
 import SwiftUI
 
 struct SpaceFilesListView: View {
-  let files: [SpaceFile]
+  let filesState: UiState<[SpaceFile]>
   @Binding var hoveredIndex: Int?
+  let onRetry: () -> Void
   
   var body: some View {
     ScrollView(.vertical, showsIndicators: true) {
       LazyVStack(alignment: .leading, spacing: 4) {
-        ForEach(Array(files.enumerated()), id: \.element.id) { idx, file in
-          SpaceFileRow(file: file, isHovered: hoveredIndex == idx)
-            .onHover { inside in
-              hoveredIndex = inside ? idx : nil
+        switch filesState {
+        case .idle:
+          EmptyView()
+        case .loading:
+          VStack {
+            ProgressView()
+              .scaleEffect(0.8)
+            Text("Loading files...")
+              .font(.system(size: 12))
+              .foregroundColor(.gray)
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .padding(.top, 40)
+        case .success(let files):
+          if files.isEmpty {
+            VStack {
+              Image(systemName: "folder")
+                .foregroundColor(.gray)
+                .font(.title2)
+              Text("No files in this space")
+                .font(.system(size: 12))
+                .foregroundColor(.gray)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.top, 40)
+          } else {
+            ForEach(Array(files.enumerated()), id: \.element.id) { idx, file in
+              SpaceFileRow(file: file, isHovered: hoveredIndex == idx)
+                .onHover { inside in
+                  hoveredIndex = inside ? idx : nil
+                }
+            }
+          }
+        case .failed(let errorMessage):
+          VStack {
+            Image(systemName: "exclamationmark.triangle")
+              .foregroundColor(.red)
+              .font(.title2)
+            Text("Error: \(errorMessage ?? "Unknown error")")
+              .font(.system(size: 12))
+              .foregroundColor(.red)
+              .multilineTextAlignment(.center)
+            Button("Retry") {
+              onRetry()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .padding(.top, 40)
         }
-        
       }
       .padding(.horizontal, 12)
       .padding(.bottom, 10)
@@ -70,15 +115,16 @@ struct SpacePagerIndicator: View {
 
 struct SpaceDetailView: View {
   @EnvironmentObject var spacesVM: SpacesViewModel
+  @StateObject private var filesVM = FilesViewModel()
   @Binding var back: Bool
   @State private var hoveredIndex: Int? = nil
   
   var currentSpaceIndex: Int? {
-    spacesVM.spaces.firstIndex(where: { $0.id == spacesVM.selectedSpace?.id })
+    guard let selectedSpace = spacesVM.selectedSpace else { return nil }
+    return spacesVM.spaces.firstIndex(where: { $0.name == selectedSpace.name })
   }
   var currentSpace: Space? {
-    guard let idx = currentSpaceIndex else { return nil }
-    return spacesVM.spaces[idx]
+    return spacesVM.selectedSpace
   }
   
   var body: some View {
@@ -94,7 +140,57 @@ struct SpaceDetailView: View {
       .background(Color.clear)
       
       
-      SpaceFilesListView(files: currentSpace?.files ?? [], hoveredIndex: $hoveredIndex)
+      SpaceFilesListView(
+        filesState: filesVM.filesState,
+        hoveredIndex: $hoveredIndex,
+        onRetry: {
+          if let space = currentSpace {
+            Task {
+              await filesVM.loadFiles(for: space)
+            }
+          }
+        }
+      )
+      .gesture(
+        DragGesture(minimumDistance: 20)
+          .onEnded { value in
+            guard let idx = currentSpaceIndex else {
+              print("🔄 [SpaceFilesListView] No current space index")
+              return 
+            }
+            
+            if value.translation.width < -50 && idx < spacesVM.spaces.count - 1 {
+              print("🔄 [SpaceFilesListView] Swiping to next space: \(idx + 1)")
+              let nextSpace = spacesVM.spaces[idx + 1]
+              withAnimation {
+                spacesVM.selectedSpace = nextSpace
+              }
+              // Load files for the new space
+              Task {
+                await filesVM.loadFiles(for: nextSpace)
+              }
+            }
+            if value.translation.width > 50 && idx > 0 {
+              print("🔄 [SpaceFilesListView] Swiping to previous space: \(idx - 1)")
+              let previousSpace = spacesVM.spaces[idx - 1]
+              withAnimation {
+                spacesVM.selectedSpace = previousSpace
+              }
+              // Load files for the new space
+              Task {
+                await filesVM.loadFiles(for: previousSpace)
+              }
+            }
+          }
+      )
+      .onAppear {
+        print("🔍 [SpaceDetailView] currentSpace: \(currentSpace?.name ?? "nil")")
+        if let space = currentSpace {
+          Task {
+            await filesVM.loadFiles(for: space)
+          }
+        }
+      }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
       
       
@@ -126,31 +222,23 @@ struct SpaceDetailView: View {
     )
     
     .contentShape(Rectangle())
-    .gesture(
-      DragGesture()
-        .onEnded { value in
-          guard let idx = currentSpaceIndex else { return }
-          if value.translation.width < -50 && idx < spacesVM.spaces.count - 1 {
-            withAnimation {
-              spacesVM.selectedSpace = spacesVM.spaces[idx + 1]
-            }
-          }
-          if value.translation.width > 50 && idx > 0 {
-            withAnimation {
-              spacesVM.selectedSpace = spacesVM.spaces[idx - 1]
-            }
-          }
-        }
-    )
     .onAppear {
         // usingg keyboardd to swtch between spaces in detals screen
       NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
         guard let idx = currentSpaceIndex else { return event }
         if event.keyCode == 123 && idx > 0 {
-          spacesVM.selectedSpace = spacesVM.spaces[idx - 1]
+          let previousSpace = spacesVM.spaces[idx - 1]
+          spacesVM.selectedSpace = previousSpace
+          Task {
+            await filesVM.loadFiles(for: previousSpace)
+          }
         }
         if event.keyCode == 124 && idx < spacesVM.spaces.count - 1 {
-          spacesVM.selectedSpace = spacesVM.spaces[idx + 1]
+          let nextSpace = spacesVM.spaces[idx + 1]
+          spacesVM.selectedSpace = nextSpace
+          Task {
+            await filesVM.loadFiles(for: nextSpace)
+          }
         }
         return event
       }

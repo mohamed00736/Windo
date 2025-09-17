@@ -25,28 +25,62 @@ struct SpacesListView: View {
           .padding(.leading, 24)
           .foregroundColor(.black)
         Divider().background(.gray.opacity(0.3))
-  
           .padding(.horizontal,16)
-        ForEach(Array(viewModel.spaces.enumerated()), id: \.element.id) { idx, space in
-          SpaceListRow(space: space, isHovered: hoveredIndex == idx)
-            .onHover { inside in
-              hoveredIndex = inside ? idx : nil
-              isHovered = inside
-            }
-            .onTapGesture {
-              withAnimation(.easeInOut(duration: 0.2)) {
-                viewModel.selectedSpace = space
+        
+        switch viewModel.spacesState {
+        case .idle:
+          EmptyView()
+        case .loading:
+          VStack {
+            ProgressView()
+              .scaleEffect(0.8)
+            Text("Loading spaces...")
+              .font(.system(size: 12))
+              .foregroundColor(.gray)
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .padding(.top, 20)
+        case .success:
+          ForEach(Array(viewModel.spaces.enumerated()), id: \.element.id) { idx, space in
+            SpaceListRow(space: space, isHovered: hoveredIndex == idx)
+              .onHover { inside in
+                hoveredIndex = inside ? idx : nil
+                isHovered = inside
+              }
+              .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                  viewModel.selectSpace(space)
+                }
+              }
+          }
+          if isWindowCursor {
+            SpaceListRow(space: nil, isHovered: false) // "Create space" row
+          }
+        case .failed(let errorMessage):
+          VStack {
+            Image(systemName: "exclamationmark.triangle")
+              .foregroundColor(.red)
+              .font(.title2)
+            Text("Error: \(errorMessage ?? "Unknown error")")
+              .font(.system(size: 12))
+              .foregroundColor(.red)
+              .multilineTextAlignment(.center)
+            Button("Retry") {
+              Task {
+                await viewModel.loadSpaces()
               }
             }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .padding(.top, 20)
         }
-        if isWindowCursor {
-          SpaceListRow(space: nil, isHovered: false) // "Create space" row
-        }
+        
         Spacer()
       }
      
-      GeneralButton(image:  "slider.horizontal.3"
-      )
+      GeneralButton(image: "slider.horizontal.3")
         .padding(.bottom, 16)
         .padding(.leading, 16)
     }

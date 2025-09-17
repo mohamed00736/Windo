@@ -9,41 +9,42 @@
 import Foundation
 
 class SpacesViewModel: ObservableObject {
-  
-  
-  // am using moch data here instead of making network call
-    @Published var spaces: [Space] = [
-        Space(id: UUID(), name: "Space 1", files: [
-            SpaceFile(id: UUID(), name: "Project brief", fileExtension: "doc"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "pdf"),
-            SpaceFile(id: UUID(), name: "Product roadmap", fileExtension: "doc"),
-            SpaceFile(id: UUID(), name: "White board tool (tldra...)", fileExtension: "mic"),
-            SpaceFile(id: UUID(), name: "White board tool (tldra...)", fileExtension: "mic"),
-            SpaceFile(id: UUID(), name: "White board tool (tldra...)", fileExtension: "mic"),
-      
-            SpaceFile(id: UUID(), name: "White board tool (tldra...)", fileExtension: "mic"),
-            SpaceFile(id: UUID(), name: "Email campaign providers", fileExtension: "chat"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-       
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-            SpaceFile(id: UUID(), name: "Screenshot.20250706", fileExtension: "img"),
-        ]),
-        Space(id: UUID(), name: "Space 2", files: [
-            SpaceFile(id: UUID(), name: "Project plan", fileExtension: "doc"),
-            SpaceFile(id: UUID(), name: "Design assets", fileExtension: "img"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-
-        ]),
-        Space(id: UUID(), name: "Space 3", files: [
-            SpaceFile(id: UUID(), name: "Campaign brief", fileExtension: "doc"),
-            SpaceFile(id: UUID(), name: "White board tool (tldra...)", fileExtension: "mic"),
-            SpaceFile(id: UUID(), name: "Email campaign providers", fileExtension: "chat"),
-            SpaceFile(id: UUID(), name: "Inline work item creation", fileExtension: "cal"),
-        ])
-    ]
+    @Published var spacesState: UiState<[Space]> = .idle
     @Published var selectedSpace: Space? = nil
+    
+    private let networkService = NetworkService.shared
+    
+    var spaces: [Space] {
+        spacesState.data ?? []
+    }
+    
+    init() {
+        Task {
+            await loadSpaces()
+        }
+    }
+    
+    @MainActor
+    func loadSpaces() async {
+        spacesState = .loading
+        
+        do {
+            let spaceNames = try await networkService.fetchSpaces()
+            let spaces = spaceNames.map { Space(name: $0) }
+            spacesState = .success(spaces)
+        } catch {
+            spacesState = .failed(error.localizedDescription)
+            print("Error loading spaces: \(error)")
+        }
+    }
+    
+    func selectSpace(_ space: Space) {
+        selectedSpace = space
+    }
+    
+    func clearError() {
+        if case .failed = spacesState {
+            spacesState = .idle
+        }
+    }
 }
