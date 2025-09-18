@@ -163,27 +163,6 @@ The app is pre-configured with:
 - **Error Handling** - Comprehensive error management
 - **Debug Support** - Extensive logging for development
 
-### Testing
-- **Unit Tests** - ViewModel testing (planned)
-- **UI Tests** - Integration testing (planned)
-- **API Testing** - Network layer testing (planned)
-
-## 📄 License
-
-This project is for demonstration purposes. Please ensure you have proper permissions before using in production.
-
-## 🤝 Contributing
-
-This is a demo project. For production use, please:
-1. Implement proper authentication
-2. Add comprehensive error handling
-3. Include unit tests
-4. Follow security best practices
-5. Use SwiftUI's native navigation system
-
-## 📞 Support
-
-For questions or issues, please refer to the code comments or create an issue in the repository.
 
 ---
 
