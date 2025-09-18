@@ -90,7 +90,7 @@ struct SpacesListView: View {
       ZStack {
         Rectangle.semiOpaqueWindow()
         .cornerRadius(0)
-        Color.white.opacity(0.44)
+        Color.clear
       }
       
     )

@@ -17,8 +17,9 @@ extension View {
 struct VisualEffect : NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSVisualEffectView()
-      view.state = .active
+//      view.state = .active
       view.material = .mediumLight // for soft whit blurr
+      view.blendingMode = .behindWindow
 
         return view
     }

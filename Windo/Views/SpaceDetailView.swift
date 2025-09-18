@@ -107,11 +107,9 @@ struct SpaceDetailView: View {
       ZStack {
         
         Rectangle.semiOpaqueWindow()
-          .cornerRadius(0)
-        Color.white.opacity(0.24)
-        
+        .cornerRadius(0)
+        Color.clear
       }
-      
     )
     
     .contentShape(Rectangle())
